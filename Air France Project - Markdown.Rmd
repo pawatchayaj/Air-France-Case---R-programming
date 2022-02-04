@@ -1,0 +1,352 @@
+---
+title: 'Team 3: Marketing Campaign'
+author: Carlota García Pleijlar, 
+        Clémentine Kalmes, 
+        Pawatchaya Jarrunakorn, 
+        Gianluca Scibilia, 
+        Alexander Hoe Gorgin
+date: "11/13/2021"
+output: rmdformats::material
+url: https://www.R-marketingcampaign.com/
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+mkt <- read_excel("~/Desktop/datasets_marketing_campaign_SF.xlsx")
+
+gsub("NA","", mkt$Income)
+as.numeric(gsub("NA","", mkt$Income))
+
+mkt$coun_dum <- gsub("AUS", "0", mkt$Country)
+mkt$coun_dum <- gsub("CA", "1", mkt$coun_dum)
+mkt$coun_dum <- gsub("GER", "2", mkt$coun_dum)
+mkt$coun_dum <- gsub("IND", "3", mkt$coun_dum)
+mkt$coun_dum <- gsub("ME", "4", mkt$coun_dum)
+mkt$coun_dum <- gsub("SA", "5", mkt$coun_dum)
+mkt$coun_dum <- gsub("SP", "6", mkt$coun_dum)
+mkt$coun_dum <- gsub("US", "7", mkt$coun_dum)
+as.numeric(mkt$coun_dum)
+ 
+mkt$Marital_dum <- gsub("Divorced", "0", mkt$Marital_Status)
+mkt$Marital_dum <- gsub("Married", "1", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("Single", "2", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("Together", "3", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("Widow", "4", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("Absurd", "5", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("Alone", "6", mkt$Marital_dum)
+mkt$Marital_dum <- gsub("YOLO", "7", mkt$Marital_dum)
+as.numeric(mkt$Marital_dum)
+
+mkt$Edu_dum <- gsub("2n Cycle", "0", mkt$Education)
+mkt$Edu_dum <- gsub("Basic", "1", mkt$Edu_dum)
+mkt$Edu_dum <- gsub("Graduation", "2", mkt$Edu_dum)
+mkt$Edu_dum <- gsub("Master", "3", mkt$Edu_dum)
+mkt$Edu_dum <- gsub("PhD", "4", mkt$Edu_dum)
+as.numeric(mkt$Edu_dum)
+
+```
+
+# Part A: Factors that Drives Store-Purchases
+
+To find the factors that drives store-purchases, a linear regression analysis of all the factors is created
+
+*summary(my_linear_web)*
+
+```{r logistic1, echo=FALSE, message=FALSE, warning=FALSE}
+train_index <- sample(1:nrow(mkt),size=0.8*nrow(mkt))
+mkt_train <- mkt[train_index,]
+mkt_test <- mkt[-train_index,]
+
+my_linear_web <- lm(NumWebPurchases~Year_Birth+Edu_dum+Marital_dum+Income+
+                  Kidhome+Teenhome+Recency+MntWines+
+                  MntFruits+MntMeatProducts+MntFishProducts+
+                  MntSweetProducts+MntGoldProds+NumDealsPurchases+
+                  NumCatalogPurchases+NumStorePurchases+NumWebVisitsMonth+
+                  AcceptedCmp1+AcceptedCmp2+AcceptedCmp3+AcceptedCmp4+
+                  AcceptedCmp5+Complain+Z_CostContact+Z_Revenue+Response+coun_dum, 
+                data=mkt)
+summary(my_linear_web)
+```
+However, after seeing the insignificant in some variables, a new regression with significant variables are created
+
+*summary(my_linear_web_better)*
+```{r logistic1.1, echo=FALSE, message=FALSE, warning=FALSE}
+my_linear_web_better <- lm(NumWebPurchases~Income+Kidhome+Teenhome+MntWines+
+                             MntSweetProducts+MntGoldProds+NumDealsPurchases+
+                             NumStorePurchases+NumWebVisitsMonth+AcceptedCmp2+
+                             AcceptedCmp5+Response, data=mkt)
+summary(my_linear_web_better)
+
+```
+### Regression Analysis
+
+  A first linear regression had to be run with all the features of the database. After removing all insignificant features, the obtained results give a high significance for 12 features. In other words, all the features can participate in the rejection of H0, as they indicate a strong relationship between them and the number of web purchases. To ensure that the model is fitting the actual data and how well the variance is explained, we look at the R square. The R square of our regression means that 49.6% of the variance found in the web purchases can be explained by the 13 features in the model. 
+To understand which features are significantly related to the number of web purchases, we can already look at the my_linear_web_better model. For that, we can use the standard error of the different features. These measures the average amount that the coefficient estimates vary from the actual average value of the web purchase. The highest standard errors are the number of teenagers in the household, the number of web visits per month and the number of accepted offers for the second and last campaigns. On the contrary the smallest standard error are the income, the amount spent on wines, sweet and gold products the last two years.  
+  The residual standard error measures the quality of a linear regression fit, or the average amount of the web purchases that will deviate from the true regression line. In the case of our linear regression the actual web purchases can deviate from the true regression by approximately 1.951 units on average.
+The coefficients also indicate a positive relation between the number of web purchases and all the features, except the number of kids at home and the responses to the second and fifth campaigns. This means that the more kids at home and answers to the campaigns, the less web purchases. On the contrary,for example, the higher the income, number of wines, sweet and gold products brought, the higher the web purchase.
+
+```{r ggplot1, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+ggplot(data=mkt, aes(x=NumWebPurchases, y=AcceptedCmp2)) + 
+  geom_jitter(color="#69b3a2")
+
+ggplot(data=mkt, aes(x=NumWebPurchases, y=AcceptedCmp5)) + 
+  geom_jitter(color="#69b3a2")
+
+plot(my_linear_web_better)
+
+```
+
+### Business Insights
+
+  According to the results of the linear regression, the company should market their online shopping options in a similar campaign as the campaigns that have been run. However, campaigns that are similar to the second and fifth ones, are likely to drag the number  of web purchases down, and therefore, should be avoided. The campaign should also focus on featuring wines and sweet and gold products. When targeting their potential buyer, households with high incomes should be prioritized, as well as families with teenagers but not kids. As expressed by the model, the higher the number of kids, the less the web purchase, and vice versa for teenagers. As the number of web purchases is also positively related to the number of deals and in store purchases, it could be interesting for the company to feature as much as possible the deals in the campaigns. Regarding the in store purchases, establishing communication on the possible deals online could also be a potential solution to drive in store buyers to the website.
+
+
+
+# Part B: Total Purchases Comparison Between the United States and the Rest of the World (US vs. RoW)
+  To better plan out the future campaign, we comparing the total purchases for different regions.
+
+*summary(lm(lm(tot_purchases~USrow, data=mkt))*
+
+```{r logistic2, echo=FALSE, message=FALSE, warning=FALSE}
+mkt$tot_purchases <- mkt$MntWines + mkt$MntFruits + mkt$MntMeatProducts + mkt$MntFishProducts + mkt$MntSweetProducts + mkt$MntGoldProds
+
+mkt$USrow <- c() 
+for (i in 1:nrow(mkt)) {
+  if(mkt$Country[i] == "US"){
+    mkt$USrow[i] <- "1"} 
+  else {mkt$USrow[i] <- "0"} 
+} 
+
+mkt$USrow <- as.numeric(mkt$USrow) 
+ 
+my_linear <- lm(tot_purchases~USrow, data=mkt) 
+
+summary(my_linear)
+```
+
+### Output computation
+
+  We binary coded RoW using a for loop with a nested if function, for which if the “i” value of the country is equal to “US”, then the “i” value of the new column called USrow will be “1”, and with the else function we assigned “0” to the rest of countries. Then with as.numeric we converted this column from chr to num.
+  For total purchases we simply created a new column that is the result of the sum of all of the amount spent for each type of product.
+
+```{r ggplot2, echo=FALSE, message=FALSE, warning=FALSE}
+plot(my_linear)
+```
+
+### Business Insights
+
+  Analyzing the regression output, we can notice that the regression is not relevant, because of a low R squared, a High p-value and low F-statistic.
+  The intercept is 604.93, which is the average purchase for non-US countries, while the slope, 17.84, indicates that on average the US spends $622.77 in total purchases. However, because the p-value of this variable is high, we can’t consider this relevant, so we can affirm that there is not proven difference between US and RoW on the performance for Total purchases.
+
+
+# Part C: Conservatives Analysis Effect on In-store Purchase
+  To analyze the spending habits of customers, we decided to labeled those with high average spending on gold as "conservative" and study the effects on how they spend on in-store purchases
+
+*Mean of average gold spend*
+
+```{r logistic3, echo=FALSE, message=FALSE, warning=FALSE}
+#Mean of Average Gold
+avg_gold <- mean(mkt$MntGoldProds)
+print(avg_gold)
+```
+
+*summary(lm(NumStorePurchases ~ MntGoldProds + gold_digger, data=mkt))*
+
+```{r logistic3.1, echo=FALSE, message=FALSE, warning=FALSE}
+mkt$gold_digger <- c()
+
+for (i in 1:nrow(mkt)) {
+  if(mkt$MntGoldProds[i] > avg_gold){
+    mkt$gold_digger[i] <- "1"
+  } else {mkt$gold_digger[i] <- "0"}
+} 
+ 
+mkt$gold_digger <- as.numeric(mkt$gold_digger)
+ 
+my_linear2 <- lm(NumStorePurchases ~ MntGoldProds + gold_digger, data=mkt) 
+
+summary(my_linear2)
+
+ggplot(mkt, aes(x=NumStorePurchases, y=gold_digger))+
+  geom_point()+
+  geom_smooth(color="#69b3a2")
+
+```
+
+### Analysis of Regression 
+
+  After creating a dummy variable for those who spent more than average (1) in gold than others (0), we ran a multiple regression, including the amount of gold purchased and the dummy variable, with Y= Number of in store purchases. The R-squared of the regression is low, but all of the variables have a significant p-value. This means that, even if the variables used for the regression are relevant, to have a more accurate regression we should probably include more variables. Lastly, a consumer that bought above average gold has 1.98 purchases more on average.
+
+# Part D: Interaction effect on Married PhD candidates in relation to amount spend on fish
+  To study the interaction effect, we are targeting "married Phd" candidates to see the relation on the amount they spend for fish products and other products that might be associated with amount spend on fish.
+
+*summary(aov(MntFishProducts ~ phd* * *wine_lover, data = mkt))*
+
+```{r logistic4, echo=FALSE, message=FALSE, warning=FALSE}
+mkt$phd <- c()
+for (i in 1:nrow(mkt)) {
+  if(mkt$Education[i] == "PhD" && mkt$Marital_Status[i] == "Married"){
+    mkt$phd[i] <- "1"
+  } else {mkt$phd[i] <- "0"}
+} 
+ 
+mkt$phd <- as.numeric(mkt$phd)
+ 
+avg_wine <- mean(mkt$MntWines) 
+mkt$wine_lover <- c() 
+for (i in 1:nrow(mkt)) {
+  if(mkt$MntWines[i] > avg_wine) {
+    mkt$wine_lover[i] <- "1"
+  } else {mkt$wine_lover[i] <- "0"}
+  
+}
+ 
+model <- aov(MntFishProducts ~ phd * wine_lover, data = mkt) 
+summary(model) 
+
+interaction.plot(x.factor = mkt$wine_lover, 
+                 trace.factor = mkt$phd, 
+                 response = mkt$MntFishProducts, 
+                 fun = median, 
+                 ylab = "Fish Consumption",
+                 xlab = "Wine Lover",
+                 col = c("pink", "blue"),
+                 lty = 1.2, 
+                 lwd = 1.5, 
+                 trace.label = "PhD") 
+
+my_linear3 <- lm(MntFishProducts ~ phd + wine_lover + phd*wine_lover, data=mkt )
+summary(my_linear3)
+```
+
+
+### Business Insights
+
+Wine_lover = 1 ~50.3
+Phd  and wine_lover = –21.5
+
+  There is not relevant correlation between people married with a phd and fish consumption. However, there is a relevant correlation between fish consumption and wine consumption. 
+People married and with a PhD that love wine, still spend on average $21.5 less than the others. Overall people who loves wine spend around $50 more than the others on fish, so we can suggest to market fish and wine together with bundling options or similar in order to create synergies and increase sales.
+
+
+# Part E: Hypothesis testing 
+
+  To further study the campaign, we would like to explore an assumptions on parents with kids and the spending habits on wine and sweets
+
+Ha: Parents with kids and teenagers are buying more wine and sweets than households without kids, as kids love sweets, and because raising kids is exhausting and parents need a break at the end of the day.
+
+*summary(lm(tot_purchases ~ AcceptedCmp1+ AcceptedCmp4+ AcceptedCmp5+ Response,data=mkt))*
+
+```{r logistic5, echo=FALSE, message=FALSE, warning=FALSE}
+
+my_lm_pur <- lm(tot_purchases~AcceptedCmp1+AcceptedCmp2+AcceptedCmp3+
+                  AcceptedCmp4+AcceptedCmp5+Response,data=mkt)
+summary(my_lm_pur)
+ 
+my_lm_pur_better <- lm(tot_purchases~AcceptedCmp1+ AcceptedCmp4+AcceptedCmp5+
+                         Response,data=mkt)
+summary(my_lm_pur_better)
+```
+
+### Analysis of Regression
+
+  Before analyzing the results of the linear regression, we can verify the accuracy of the model. The F-statistic score being high and the R square being close to 0.2 shows the veracity of the model. Looking at the residual standard error we can see that the quality of a linear regression fit could be better as the average amount of wine and sweet purchases that will deviate from the true regression line is 60%.
+The negative coefficients for the amount of wine and sweet products show a negative correlation with the total kids in a household. This means that the more kids in the household, the less amount of sweets and wine is being bought. Therefore, our hypothesis is not valid. 
+
+```{r ggplotE, echo=FALSE, message=FALSE, warning=FALSE}
+plot(my_lm_pur_better)
+```
+
+# Other findings 
+
+## Relation between web visits and web purchases
+
+The relationship between web visits and web purchases are significant. The two variables has an inverse relationship, as number of web purchases increase, number of web visit decrease.
+
+```{r q2, echo=FALSE, message=FALSE, warning=FALSE}
+
+web_vis_pur <- ggplot(data=mkt, aes(x=NumWebPurchases, NumWebVisitsMonth)) +
+  geom_point() +
+  geom_smooth(color= "#69b3a2")
+
+print(web_vis_pur)
+
+```
+Regression output of significant 
+
+```{r q2reg, echo=FALSE, message=FALSE, warning=FALSE}
+my_linear7 <- lm(NumWebPurchases ~ NumWebVisitsMonth,  data=mkt )
+summary(my_linear7) #relevant
+
+```
+
+## Relation between geographical region and the success of a campaign
+
+SP has the highest purchases compared to the rest of the world, followed by SA  and CA. 
+
+```{r q3, echo=FALSE, message=FALSE, warning=FALSE}
+p <- ggplot(data = mkt, aes(x = Country, y = tot_purchases )) + 
+  geom_bar(stat='identity', color = "#69b3a2")
+
+print(p)
+```
+## Average amount spent on fruits
+
+The average amount spent on fruit is $26.3 and people that are not “parents” spend more on fruit than parents.
+
+*Average amount spend on fruits*
+```{r q4, echo=FALSE, message=FALSE, warning=FALSE}
+mean(mkt$MntFruits)
+```
+
+```{r q4plot, echo=FALSE, message=FALSE, warning=FALSE}
+mkt$parents <- c()
+for (i in 1:nrow(mkt)) {
+  if(mkt$Kidhome[i] >= 1 | mkt$Teenhome[i] >= 1){
+    mkt$parents[i] <- 1
+  } else {mkt$parents[i] <- 0}
+}
+
+p2 <- ggplot(data = mkt, aes(x = parents, y = MntFruits, )) + geom_bar(stat="identity", color = "#69b3a2")
+print(p2)
+
+```
+
+## People with advanced degree in relation to amount of fish purchases
+
+We can see that people with 2nd cycle education level are most excited about getting their Omega-3 fatty acids than the rest where the people have a basic education level are more fussy about getting their daily fish. Depending on the strategy, it might be handy to start creating some educational material that can inform people about the good components that fish contain
+
+```{r q6er, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+mkt$Basic<- as.numeric(ifelse(mkt$Education=="Basic","1","0"))
+mkt$Graduation<- as.numeric(ifelse(mkt$Education=="Graduation","1","0"))
+mkt$Master<- as.numeric(ifelse(mkt$Education=="Master","1","0"))
+mkt$Twocycle<- as.numeric(ifelse(mkt$Education=="2n Cycle","1","0"))
+mkt$Phd<- as.numeric(ifelse(mkt$Education=="PhD","1","0"))
+
+fish_basic<-sum(mkt$MntFishProducts*mkt$Basic)/sum(mkt$Basic)
+fish_graduation<-sum(mkt$MntFishProducts*mkt$Graduation)/sum(mkt$Graduation)
+fish_master<-sum(mkt$MntFishProducts*mkt$Master)/sum(mkt$Master)
+fish_TwoNdCycle<-sum(mkt$MntFishProducts*mkt$Twocycle)/sum(mkt$Twocycle)
+fish_phd<-sum(mkt$MntFishProducts*mkt$Phd)/sum(mkt$Phd)
+fish_rates<-cbind(fish_basic,fish_graduation,fish_master,fish_TwoNdCycle,fish_phd)
+
+barplot(fish_rates, names.arg=factor(c("Basic","Graduation","Master","2nd Cycle","Phd")), ylab="Average Fish purchase", col="#69b3a2")
+
+```
+
+## Average age of customers
+
+On average, customers in the sample were born in 1969. Therefore, they are on average 52 years old.
+
+```{r q10, echo=FALSE, message=FALSE, warning=FALSE}
+hist(mkt$Year_Birth, col = "#69b3a2")
+
+```
+
+
+
+
